@@ -22,7 +22,13 @@ export const getPosts = async (req, res) => {
 
 export const createPost = async (req, res) => {
   const post = req.body;
-  const newPost = new PostMessage(post);
+  if (!req.userId) return res.status(401).json({ message: "Unauthorized" });
+
+  const newPost = new PostMessage({
+    ...post,
+    creator: req.userId,
+    name: post.name,
+  });
   try {
     await newPost.save();
     res.status(201).json(newPost);
@@ -33,6 +39,7 @@ export const createPost = async (req, res) => {
 
 export const updatePost = async (req, res) => {
   const { id: _id } = req.params;
+
   const post = req.body;
   if (!mongoose.Types.ObjectId.isValid(_id))
     return res.status(404).send("No post with that ID!");
@@ -45,6 +52,7 @@ export const updatePost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   const { id: _id } = req.params;
+
   if (!mongoose.Types.ObjectId.isValid(_id))
     return res.status(404).send("No post with that ID!");
 
@@ -53,16 +61,25 @@ export const deletePost = async (req, res) => {
 };
 
 export const likePost = async (req, res) => {
-  const { id, cnt } = req.params;
+  const { id } = req.params;
+
+  if (!req.userId) return res.status(401).json({ message: "Unauthorized" });
+
   if (!mongoose.Types.ObjectId.isValid(id))
     return res.status(404).send("No post with that ID!");
 
   const post = await PostMessage.findById(id);
-  const updatedPost = await PostMessage.findByIdAndUpdate(
-    id,
-    { likeCount: post.likeCount + Number(cnt) },
-    { new: true }
-  );
+  const index = post.likes.findIndex((userId) => userId === String(req.userId));
+  console.log(index);
+  if (index === -1) {
+    post.likes.push(req.userId);
+  } else {
+    post.likes = post.likes.filter((id) => id !== String(req.userId));
+  }
+
+  const updatedPost = await PostMessage.findByIdAndUpdate(id, post, {
+    new: true,
+  });
 
   res.json(updatedPost);
 };
