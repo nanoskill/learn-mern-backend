@@ -16,6 +16,7 @@ export const getPosts = async (req, res) => {
     console.log(`get posts called: ${postMessages.length}`);
     res.status(200).json(postMessages);
   } catch (error) {
+    console.log(error);
     res.status(404).json({ message: error.message });
   }
 };
@@ -33,6 +34,7 @@ export const createPost = async (req, res) => {
     await newPost.save();
     res.status(201).json(newPost);
   } catch (error) {
+    console.log(error);
     res.status(409).json({ message: error.message });
   }
 };
@@ -70,7 +72,6 @@ export const likePost = async (req, res) => {
 
   const post = await PostMessage.findById(id);
   const index = post.likes.findIndex((userId) => userId === String(req.userId));
-  console.log(index);
   if (index === -1) {
     post.likes.push(req.userId);
   } else {
